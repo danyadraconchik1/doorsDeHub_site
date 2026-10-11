@@ -39,37 +39,17 @@
     letter-spacing: -0.5px;
   }
   .subtitle { text-align: center; color: #8c8c9b; font-size: 14px; margin-bottom: 32px; }
-
-  /* Блок с игрой (вместо селекта) */
   .game-info {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
     padding: 16px 20px;
     background: rgba(30, 30, 36, 0.9);
     border: 1px solid rgba(99, 102, 241, 0.3);
-    border-radius: 12px;
-    margin-bottom: 20px;
+    border-radius: 12px; margin-bottom: 20px;
   }
-  .game-info .icon {
-    font-size: 24px;
-  }
-  .game-info .text {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .game-info .name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #f0f0f5;
-  }
-  .game-info .time {
-    font-size: 12px;
-    color: #8c8c9b;
-  }
-
+  .game-info .icon { font-size: 24px; }
+  .game-info .text { display: flex; flex-direction: column; align-items: flex-start; }
+  .game-info .name { font-size: 15px; font-weight: 700; color: #f0f0f5; }
+  .game-info .time { font-size: 12px; color: #8c8c9b; }
   .btn {
     width: 100%; padding: 16px 24px;
     background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
@@ -77,7 +57,6 @@
     font-size: 15px; font-weight: 700; letter-spacing: 0.3px;
     cursor: pointer; transition: all 0.25s;
     box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
-    position: relative; overflow: hidden;
   }
   .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(99, 102, 241, 0.5); }
   .btn:active { transform: translateY(0); }
@@ -124,12 +103,9 @@
 <body>
 
 <div class="container">
-  <div class="logo">
-    <h1>🔑 De HUB</h1>
-  </div>
+  <div class="logo"><h1>🔑 De HUB</h1></div>
   <p class="subtitle">Free Key Generator</p>
 
-  <!-- Блок игры (без выбора) -->
   <div class="game-info">
     <div class="icon">🚪</div>
     <div class="text">
@@ -151,7 +127,7 @@
       <button class="copy-btn" id="copyBtn" onclick="copyKey()">Copy</button>
     </div>
     <p class="hint">
-      Copy this key and enter it in the script. Do not share it with anyone.<br>
+      Copy this key and enter it in the script.<br>
       ⏰ Expires in: <span class="timer" id="timer">--:--:--</span>
     </p>
   </div>
@@ -163,96 +139,79 @@
 
 <script>
   // ============================================================
-  // НАСТРОЙКИ
+  // ⚠️ ВСТАВЬ СВОИ ДАННЫЕ ЗДЕСЬ
   // ============================================================
   const FIREBASE_CONFIG = {
     projectId: "de-hub-doors-keys",         // ← ТВОЙ Project ID
-    apiKey: "ВСТАВЬ_API_KEY_ИЗ_FIREBASE",   // ← ТВОЙ API Key
+    apiKey: "ВСТАВЬ_API_KEY_ИЗ_FIREBASE",   // ← ТВОЙ API Key (AIzaSy...)
     collection: "keys"
   };
 
   const WORKINK = {
-    apiKey: "ВСТАВЬ_WORKINK_API_KEY",
-    campaignUrl: "https://work.ink/ТВОЙ_ID", // ← ссылка на кампанию
+    campaignUrl: "https://work.ink/3305/doors-dehub-key-system", // ← твоя кампания
     redirectUrl: window.location.origin + window.location.pathname
   };
 
-  // ⏰ СРОК КЛЮЧА — 6 ЧАСОВ
   const BASIC_HOURS = 6;
-
   let timerInterval = null;
 
   // ============================================================
-  // ГЕНЕРАЦИЯ СТРОКИ КЛЮЧА
+  // ГЕНЕРАЦИЯ КЛЮЧА
   // ============================================================
   function genKeyString() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     const groups = [];
     for (let g = 0; g < 3; g++) {
       let part = "";
-      for (let i = 0; i < 4; i++) {
-        part += chars[Math.floor(Math.random() * chars.length)];
-      }
+      for (let i = 0; i < 4; i++) part += chars[Math.floor(Math.random() * chars.length)];
       groups.push(part);
     }
     return `DEHUB-${groups.join("-")}`;
   }
 
   // ============================================================
-  // ЗАПИСЬ В FIRESTORE (REST API)
+  // ЗАПИСЬ В FIRESTORE
   // ============================================================
-  async function writeKeyToFirebase(key, expireDate, userId) {
+  async function writeKeyToFirebase(key, expireDate) {
     const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/${FIREBASE_CONFIG.collection}?key=${FIREBASE_CONFIG.apiKey}`;
-
     const body = {
       fields: {
         key: { stringValue: key },
         tier: { stringValue: "basic" },
         game: { stringValue: "doors" },
-        userId: { stringValue: String(userId || "") },
         createdAt: { timestampValue: new Date().toISOString() },
         expireAt: { timestampValue: expireDate.toISOString() },
         valid: { booleanValue: true }
       }
     };
-
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
-
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error("Firebase error: " + err);
-    }
+    if (!res.ok) throw new Error("Firebase error: " + await res.text());
     return await res.json();
   }
 
   // ============================================================
-  // ШАГ 1: НАЧАЛО ВЕРИФИКАЦИИ
+  // ШАГ 1: старт верификации
   // ============================================================
   function startVerification() {
     const sessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
     localStorage.setItem("dehub_session", sessionId);
-    localStorage.setItem("dehub_started", Date.now());
-
-    const url = `${WORKINK.campaignUrl}?redirect=${encodeURIComponent(WORKINK.redirectUrl + "?dehub_verify=1&session=" + sessionId)}`;
+    const redirect = WORKINK.redirectUrl + "?dehub_verify=1&session=" + sessionId;
+    const url = WORKINK.campaignUrl + "?redirect=" + encodeURIComponent(redirect);
     window.location.href = url;
   }
 
   // ============================================================
-  // ШАГ 2: ПРОВЕРКА ВОЗВРАТА С WORK.INK
+  // ШАГ 2: проверка возврата с Work.ink
   // ============================================================
   function checkReturnFromWorkink() {
     const params = new URLSearchParams(window.location.search);
-    const dehubVerify = params.get("dehub_verify");
-    const session = params.get("session");
-
-    if (dehubVerify === "1" && session) {
-      const savedSession = localStorage.getItem("dehub_session");
-
-      if (session === savedSession) {
+    if (params.get("dehub_verify") === "1" && params.get("session")) {
+      const saved = localStorage.getItem("dehub_session");
+      if (params.get("session") === saved) {
         showStatus("✅ Верификация пройдена! Генерируем ключ...", "success");
         setTimeout(() => {
           generateKeyConfirmed();
@@ -262,28 +221,22 @@
         showStatus("❌ Ошибка: верификация не пройдена!", "error");
         window.history.replaceState({}, document.title, window.location.pathname);
       }
-    } else if (params.get("error")) {
-      showStatus("❌ Верификация отклонена. Попробуй снова.", "error");
-      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }
 
   // ============================================================
-  // ШАГ 3: ГЕНЕРАЦИЯ КЛЮЧА
+  // ШАГ 3: генерация ключа
   // ============================================================
   async function generateKeyConfirmed() {
     const btn = document.getElementById("getKeyBtn");
     btn.disabled = true;
     btn.textContent = "Generating...";
-    hideResult();
-
+    document.getElementById("result").classList.remove("show");
     try {
       const key = genKeyString();
       const expireDate = new Date(Date.now() + BASIC_HOURS * 60 * 60 * 1000);
-
-      await writeKeyToFirebase(key, expireDate, "");
-
-      showStatus("✅ Ключ успешно создан! (срок: 6 часов)", "success");
+      await writeKeyToFirebase(key, expireDate);
+      showStatus("✅ Ключ создан! (срок: 6 часов)", "success");
       showResult(key, expireDate);
     } catch (e) {
       console.error(e);
@@ -302,7 +255,6 @@
     el.textContent = text;
     el.className = "status show " + type;
   }
-  function hideStatus() { document.getElementById("status").className = "status"; }
   function showResult(key, expireDate) {
     document.getElementById("keyText").textContent = key;
     document.getElementById("result").classList.add("show");
@@ -310,8 +262,6 @@
     document.getElementById("copyBtn").classList.remove("copied");
     startTimer(expireDate);
   }
-  function hideResult() { document.getElementById("result").classList.remove("show"); }
-
   function startTimer(expireDate) {
     const timerEl = document.getElementById("timer");
     function update() {
@@ -319,20 +269,15 @@
       if (left <= 0) {
         timerEl.textContent = "expired";
         timerEl.style.color = "#f87171";
-        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        clearInterval(timerInterval);
         return;
       }
-      const totalSec = Math.floor(left / 1000);
-      const h = String(Math.floor(totalSec / 3600)).padStart(2, "0");
-      const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2, "0");
-      const s = String(totalSec % 60).padStart(2, "0");
-      timerEl.textContent = `${h}:${m}:${s}`;
-      timerEl.style.color = "#fbbf24";
+      const t = Math.floor(left / 1000);
+      timerEl.textContent = `${String(Math.floor(t/3600)).padStart(2,"0")}:${String(Math.floor((t%3600)/60)).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`;
     }
     update();
     timerInterval = setInterval(update, 1000);
   }
-
   function copyKey() {
     const key = document.getElementById("keyText").textContent;
     if (!key || key === "—") return;
@@ -344,12 +289,7 @@
     });
   }
 
-  // ============================================================
-  // ЗАПУСК
-  // ============================================================
-  window.addEventListener("DOMContentLoaded", () => {
-    checkReturnFromWorkink();
-  });
+  window.addEventListener("DOMContentLoaded", checkReturnFromWorkink);
 </script>
 
 </body>
