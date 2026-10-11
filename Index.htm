@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>De HUB — Free Key Generator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+  body {
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #1a1a2e 0%, #0f0f18 60%, #0a0a10 100%);
+    color: #f0f0f5;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.12) 0%, transparent 40%);
+    pointer-events: none;
+  }
+  .container {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 520px;
+    background: rgba(22, 22, 27, 0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 20px; padding: 40px 32px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 60px rgba(99, 102, 241, 0.1);
+    animation: fadeIn 0.6s ease-out;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .logo { text-align: center; margin-bottom: 8px; }
+  .logo h1 {
+    font-size: 32px; font-weight: 800;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+  .subtitle { text-align: center; color: #8c8c9b; font-size: 14px; margin-bottom: 32px; }
+
+  /* Блок с игрой (вместо селекта) */
+  .game-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: rgba(30, 30, 36, 0.9);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+  .game-info .icon {
+    font-size: 24px;
+  }
+  .game-info .text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .game-info .name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #f0f0f5;
+  }
+  .game-info .time {
+    font-size: 12px;
+    color: #8c8c9b;
+  }
+
+  .btn {
+    width: 100%; padding: 16px 24px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none; border-radius: 12px; color: #fff;
+    font-size: 15px; font-weight: 700; letter-spacing: 0.3px;
+    cursor: pointer; transition: all 0.25s;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+    position: relative; overflow: hidden;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(99, 102, 241, 0.5); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .result {
+    margin-top: 24px; padding: 20px;
+    background: rgba(30, 30, 36, 0.9);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 12px; display: none;
+    animation: slideIn 0.4s ease-out;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .result.show { display: block; }
+  .result-label { font-size: 12px; color: #8c8c9b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; font-weight: 600; }
+  .key-box {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(15, 15, 20, 0.8);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 12px;
+  }
+  .key-text { flex: 1; font-family: "Courier New", monospace; font-size: 16px; font-weight: 700; color: #a5b4fc; letter-spacing: 1px; word-break: break-all; }
+  .copy-btn {
+    background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.5);
+    color: #a5b4fc; padding: 8px 14px; border-radius: 8px;
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+  }
+  .copy-btn:hover { background: rgba(99, 102, 241, 0.4); color: #fff; }
+  .copy-btn.copied { background: rgba(34, 197, 94, 0.3); border-color: rgba(34, 197, 94, 0.6); color: #4ade80; }
+  .hint { font-size: 12px; color: #8c8c9b; line-height: 1.6; }
+  .hint .timer { color: #fbbf24; font-weight: 700; }
+  .status {
+    margin-top: 16px; padding: 12px 16px; border-radius: 10px;
+    font-size: 13px; font-weight: 500; display: none; text-align: center;
+  }
+  .status.show { display: block; }
+  .status.loading { background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #a5b4fc; }
+  .status.error { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; }
+  .status.success { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; }
+  .footer { margin-top: 28px; padding-top: 20px; border-top: 1px solid rgba(99, 102, 241, 0.15); text-align: center; font-size: 12px; color: #5a5a68; }
+  .footer a { color: #6366f1; text-decoration: none; font-weight: 600; }
+  .footer a:hover { color: #a5b4fc; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo">
+    <h1>🔑 De HUB</h1>
+  </div>
+  <p class="subtitle">Free Key Generator</p>
+
+  <!-- Блок игры (без выбора) -->
+  <div class="game-info">
+    <div class="icon">🚪</div>
+    <div class="text">
+      <div class="name">DOORS</div>
+      <div class="time">Key valid for 6 hours</div>
+    </div>
+  </div>
+
+  <button class="btn" id="getKeyBtn" onclick="startVerification()">
+    🔓 Verify & Generate Key →
+  </button>
+
+  <div class="status" id="status"></div>
+
+  <div class="result" id="result">
+    <div class="result-label">Your Key</div>
+    <div class="key-box">
+      <span class="key-text" id="keyText">—</span>
+      <button class="copy-btn" id="copyBtn" onclick="copyKey()">Copy</button>
+    </div>
+    <p class="hint">
+      Copy this key and enter it in the script. Do not share it with anyone.<br>
+      ⏰ Expires in: <span class="timer" id="timer">--:--:--</span>
+    </p>
+  </div>
+
+  <div class="footer">
+    Premium? <a href="https://t.me/Dehubkeys_bot" target="_blank">Open @Dehubkeys_bot</a>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // НАСТРОЙКИ
+  // ============================================================
+  const FIREBASE_CONFIG = {
+    projectId: "de-hub-doors-keys",         // ← ТВОЙ Project ID
+    apiKey: "ВСТАВЬ_API_KEY_ИЗ_FIREBASE",   // ← ТВОЙ API Key
+    collection: "keys"
+  };
+
+  const WORKINK = {
+    apiKey: "ВСТАВЬ_WORKINK_API_KEY",
+    campaignUrl: "https://work.ink/ТВОЙ_ID", // ← ссылка на кампанию
+    redirectUrl: window.location.origin + window.location.pathname
+  };
+
+  // ⏰ СРОК КЛЮЧА — 6 ЧАСОВ
+  const BASIC_HOURS = 6;
+
+  let timerInterval = null;
+
+  // ============================================================
+  // ГЕНЕРАЦИЯ СТРОКИ КЛЮЧА
+  // ============================================================
+  function genKeyString() {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const groups = [];
+    for (let g = 0; g < 3; g++) {
+      let part = "";
+      for (let i = 0; i < 4; i++) {
+        part += chars[Math.floor(Math.random() * chars.length)];
+      }
+      groups.push(part);
+    }
+    return `DEHUB-${groups.join("-")}`;
+  }
+
+  // ============================================================
+  // ЗАПИСЬ В FIRESTORE (REST API)
+  // ============================================================
+  async function writeKeyToFirebase(key, expireDate, userId) {
+    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/${FIREBASE_CONFIG.collection}?key=${FIREBASE_CONFIG.apiKey}`;
+
+    const body = {
+      fields: {
+        key: { stringValue: key },
+        tier: { stringValue: "basic" },
+        game: { stringValue: "doors" },
+        userId: { stringValue: String(userId || "") },
+        createdAt: { timestampValue: new Date().toISOString() },
+        expireAt: { timestampValue: expireDate.toISOString() },
+        valid: { booleanValue: true }
+      }
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error("Firebase error: " + err);
+    }
+    return await res.json();
+  }
+
+  // ============================================================
+  // ШАГ 1: НАЧАЛО ВЕРИФИКАЦИИ
+  // ============================================================
+  function startVerification() {
+    const sessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem("dehub_session", sessionId);
+    localStorage.setItem("dehub_started", Date.now());
+
+    const url = `${WORKINK.campaignUrl}?redirect=${encodeURIComponent(WORKINK.redirectUrl + "?dehub_verify=1&session=" + sessionId)}`;
+    window.location.href = url;
+  }
+
+  // ============================================================
+  // ШАГ 2: ПРОВЕРКА ВОЗВРАТА С WORK.INK
+  // ============================================================
+  function checkReturnFromWorkink() {
+    const params = new URLSearchParams(window.location.search);
+    const dehubVerify = params.get("dehub_verify");
+    const session = params.get("session");
+
+    if (dehubVerify === "1" && session) {
+      const savedSession = localStorage.getItem("dehub_session");
+
+      if (session === savedSession) {
+        showStatus("✅ Верификация пройдена! Генерируем ключ...", "success");
+        setTimeout(() => {
+          generateKeyConfirmed();
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }, 800);
+      } else {
+        showStatus("❌ Ошибка: верификация не пройдена!", "error");
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } else if (params.get("error")) {
+      showStatus("❌ Верификация отклонена. Попробуй снова.", "error");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }
+
+  // ============================================================
+  // ШАГ 3: ГЕНЕРАЦИЯ КЛЮЧА
+  // ============================================================
+  async function generateKeyConfirmed() {
+    const btn = document.getElementById("getKeyBtn");
+    btn.disabled = true;
+    btn.textContent = "Generating...";
+    hideResult();
+
+    try {
+      const key = genKeyString();
+      const expireDate = new Date(Date.now() + BASIC_HOURS * 60 * 60 * 1000);
+
+      await writeKeyToFirebase(key, expireDate, "");
+
+      showStatus("✅ Ключ успешно создан! (срок: 6 часов)", "success");
+      showResult(key, expireDate);
+    } catch (e) {
+      console.error(e);
+      showStatus("❌ Ошибка: " + e.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "🔓 Verify & Generate Key →";
+    }
+  }
+
+  // ============================================================
+  // UI
+  // ============================================================
+  function showStatus(text, type) {
+    const el = document.getElementById("status");
+    el.textContent = text;
+    el.className = "status show " + type;
+  }
+  function hideStatus() { document.getElementById("status").className = "status"; }
+  function showResult(key, expireDate) {
+    document.getElementById("keyText").textContent = key;
+    document.getElementById("result").classList.add("show");
+    document.getElementById("copyBtn").textContent = "Copy";
+    document.getElementById("copyBtn").classList.remove("copied");
+    startTimer(expireDate);
+  }
+  function hideResult() { document.getElementById("result").classList.remove("show"); }
+
+  function startTimer(expireDate) {
+    const timerEl = document.getElementById("timer");
+    function update() {
+      const left = expireDate.getTime() - Date.now();
+      if (left <= 0) {
+        timerEl.textContent = "expired";
+        timerEl.style.color = "#f87171";
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        return;
+      }
+      const totalSec = Math.floor(left / 1000);
+      const h = String(Math.floor(totalSec / 3600)).padStart(2, "0");
+      const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2, "0");
+      const s = String(totalSec % 60).padStart(2, "0");
+      timerEl.textContent = `${h}:${m}:${s}`;
+      timerEl.style.color = "#fbbf24";
+    }
+    update();
+    timerInterval = setInterval(update, 1000);
+  }
+
+  function copyKey() {
+    const key = document.getElementById("keyText").textContent;
+    if (!key || key === "—") return;
+    navigator.clipboard.writeText(key).then(() => {
+      const btn = document.getElementById("copyBtn");
+      btn.textContent = "✓ Copied";
+      btn.classList.add("copied");
+      setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 2000);
+    });
+  }
+
+  // ============================================================
+  // ЗАПУСК
+  // ============================================================
+  window.addEventListener("DOMContentLoaded", () => {
+    checkReturnFromWorkink();
+  });
+</script>
+
+</body>
+</html>
