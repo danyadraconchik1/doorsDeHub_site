@@ -111,7 +111,7 @@
     </div>
   </div>
 
-  <button class="btn" id="getKeyBtn" onclick="startVerification()">
+  <button class="btn" id="getKeyBtn" onclick="generateKey()">
     🔓 Get Key →
   </button>
 
@@ -140,11 +140,11 @@
     collection: "keys"
   };
 
-  const WORKINK_URL = "https://work.ink/3305/doors-dehub-key-system";
-
   const BASIC_HOURS = 6;
   let timerInterval = null;
 
+  // ============================================================
+  // ГЕНЕРАЦИЯ КЛЮЧА
   // ============================================================
   function genKeyString() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -157,50 +157,56 @@
     return `DEHUB-${groups.join("-")}`;
   }
 
+  // ============================================================
+  // ЗАПИСЬ КЛЮЧА В FIRESTORE
+  // ВАЖНО: имя документа = сам ключ (чтобы Lua-скрипт нашёл)
+  // ============================================================
   async function writeKeyToFirebase(key, expireDate) {
-    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/${FIREBASE_CONFIG.collection}?key=${FIREBASE_CONFIG.apiKey}`;
+    // PATCH вместо POST — создаёт документ с заданным ID (= имя ключа)
+    const docUrl = `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/${FIREBASE_CONFIG.collection}/${encodeURIComponent(key)}?key=${FIREBASE_CONFIG.apiKey}`;
+
     const body = {
       fields: {
-        key: { stringValue: key },
-        tier: { stringValue: "basic" },
-        game: { stringValue: "doors" },
+        // Поля, которые читает Lua-скрипт:
+        userId:    { integerValue: "0" },                                 // 0 = свободен
+        expires:   { integerValue: String(Math.floor(expireDate.getTime() / 1000)) }, // Unix-секунды
+        banned:    { booleanValue: false },
+
+        // Доп. инфо:
+        tier:      { stringValue: "basic" },
+        game:      { stringValue: "doors" },
         createdAt: { timestampValue: new Date().toISOString() },
-        expireAt: { timestampValue: expireDate.toISOString() },
-        valid: { booleanValue: true }
+        valid:     { booleanValue: true }
       }
     };
-    const res = await fetch(url, {
-      method: "POST",
+
+    const res = await fetch(docUrl, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
-    if (!res.ok) throw new Error("Firebase error: " + await res.text());
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error("Firebase error: " + errText);
+    }
     return await res.json();
   }
 
-  function startVerification() {
-    const redirect = window.location.origin + window.location.pathname + "?verified=1";
-    const url = WORKINK_URL + "?redirect=" + encodeURIComponent(redirect);
-    window.location.href = url;
-  }
-
-  function checkReturn() {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("verified") === "1") {
-      showStatus("⏳ Генерация ключа...", "loading");
-      generateKey();
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }
-
+  // ============================================================
+  // ГЕНЕРАЦИЯ ПО КНОПКЕ (без work.ink, без редиректа)
+  // ============================================================
   async function generateKey() {
     const btn = document.getElementById("getKeyBtn");
     btn.disabled = true;
     btn.textContent = "Generating...";
+    showStatus("⏳ Генерация ключа...", "loading");
+
     try {
       const key = genKeyString();
       const expireDate = new Date(Date.now() + BASIC_HOURS * 60 * 60 * 1000);
       await writeKeyToFirebase(key, expireDate);
+
       showStatus("✅ Ключ создан! (6 часов)", "success");
       document.getElementById("keyText").textContent = key;
       document.getElementById("result").classList.add("show");
@@ -215,6 +221,7 @@
     }
   }
 
+  // ============================================================
   function showStatus(text, type) {
     const el = document.getElementById("status");
     el.textContent = text;
@@ -223,6 +230,7 @@
 
   function startTimer(expireDate) {
     const timerEl = document.getElementById("timer");
+    clearInterval(timerInterval);
     function update() {
       const left = expireDate.getTime() - Date.now();
       if (left <= 0) {
@@ -249,7 +257,14 @@
     });
   }
 
-  window.addEventListener("DOMContentLoaded", checkReturn);
+  // Если уже был параметр ?verified=1 — просто генерим (для совместимости)
+  window.addEventListener("DOMContentLoaded", function() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("verified") === "1") {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      generateKey();
+    }
+  });
 </script>
 
 </body>
